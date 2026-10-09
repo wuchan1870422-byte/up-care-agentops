@@ -1,0 +1,16 @@
+export const roles = ['service','operator','reviewer','manager','admin'] as const;
+export type Role = typeof roles[number];
+export type Context = {workspace: string; role: Role};
+export type Kind = 'conversation'|'run'|'ticket'|'appointment'|'approval'|'quality'|'followup'|'document'|'evaluation'|'note'|'customer';
+export type RecordRow<T = Record<string, unknown>> = {id:string; workspace:string; kind:Kind; createdAt:string; updatedAt:string; data:T};
+export type Intent = {intent:'appointment'|'insurance'|'clinic'|'medical'|'unknown'; clinic:string|null; time:string|null; language:'zh'|'en'|'mixed'; insurance:boolean; missing:string[]; escalation:boolean};
+export type Citation = {documentId:string; version:number; title:string; content:string; source:string; score:number; chunk:number};
+export type Risk = {type:string; severity:'high'|'medium'; excerpt:string; reason:string; suggestion:string};
+export type Quality = {text:string; risks:Risk[]; revised:string; requiresApproval:boolean; citations:Citation[]; clinic:string|null; status:'pending'|'reviewed'; reviewerNote?:string};
+export type NodeEvent = {id:string; name:string; status:'running'|'completed'|'failed'|'waiting'; startedAt:string; endedAt?:string; durationMs?:number; input:unknown; output?:unknown; error?:string; tool:string};
+export type Run = {conversationId:string; input:string; mode:'demo'; status:'running'|'completed'|'failed'|'awaiting_approval'; nodes:NodeEvent[]; intent?:Intent; citations:Citation[]; draft?:string; qualityId?:string; ticketId?:string; approvalId?:string; error?:string; durationMs?:number; promptVersion:string; retryOf?:string};
+export type Conversation = {title:string; messages:{role:'user'|'assistant'; text:string; at:string}[]};
+export type Ticket = {title:string; clinic:string|null; status:'pending'|'approved'|'in_progress'|'completed'|'rejected'; priority:'normal'|'high'; assignedTo:string; notes:string[]; conversationId?:string; runId?:string; intent?:Intent};
+export type Document = {title:string; content:string; source:string; version:number; active:boolean; visibility:'all'|'reviewer'; versions:{version:number; content:string; at:string}[]; chunks:string[]};
+export type Approval = {targetId:string; targetKind:'ticket'|'note'; status:'pending'|'approved'|'rejected'; reason:string; decidedBy?:Role; note?:string};
+export type FollowUp = {records:string; summary:string; unresolved:string[]; draft:string; ticketId:string};
