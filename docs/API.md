@@ -11,14 +11,19 @@ Vercel 公开版本使用浏览器独立数据，业务 API 返回明确的 503�
 | GET health | mode、storage、modelCalled | 无需会话 |
 | GET search?q= | 文档片段、排序得分、版本、来源 | 当前会话 |
 | GET analytics?clinic=&from=&to= | 院区与 ISO 日期范围 | 当前会话 |
-| GET export?clinic=&status= | 工单 CSV，防公式注入 | manager/admin |
+| GET export?clinic=&status=&from=&to= | 工单 CSV，UTC 日期范围，防公式注入 | manager/admin |
+| GET quality/report?batchId= | 当前空间或指定批次的质检 TXT 报告，过滤限阅引用 | reviewer/manager/admin |
+| GET mock/appointments | 当前空间模拟意向；realSystemConnected=false | 当前会话 |
 | POST role | `{role}`；只用于演示 | 当前会话 |
 | POST consult | `{text, key, conversationId?, retryOf?}` | service/operator/admin |
 | POST approve | `{id, decision, note}` | reviewer/manager/admin；医疗判断只 reviewer/admin |
 | POST ticket | `{title, key, clinic?, priority?, conversationId?, runId?}` | service/operator/reviewer/admin |
 | POST ticket/status | `{id,status: in_progress或completed,note?}` | operator/manager/admin |
 | POST ticket/assign | `{id,assignedTo,note?}` | operator/manager/admin |
-| POST quality | `{texts: string[1..20]}` | service/operator/reviewer/admin |
+| POST quality | `{texts: string[1..20],batchId?: UUID}` | service/operator/reviewer/admin |
+| POST mock/crm/sync | `{leadId,key}`；模拟同步、幂等及审计，无外部网络调用 | operator/admin |
+| POST prompt | `{name,template,note,parentId?}`；不可变版本，拒绝过期编辑 | reviewer/admin |
+| POST prompt/evaluate | `{id}`；六案例模板规则检查，不调用模型 | reviewer/admin |
 | POST quality/review | `{id,note}` | reviewer/admin |
 | POST document | `{id?,title,content,source,visibility?,active?}` | reviewer/admin |
 | POST document/archive | `{id}`；软删除/归档并保留版本 | reviewer/admin |

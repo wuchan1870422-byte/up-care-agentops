@@ -11,7 +11,7 @@ export default defineConfig({
     ["json", { outputFile: "output/playwright/results.json" }],
   ],
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: process.env.E2E_BASE_URL || "http://127.0.0.1:3000",
     channel:
       process.env.PLAYWRIGHT_CHANNEL ||
       (process.platform === "win32" ? "msedge" : "chromium"),
@@ -21,10 +21,12 @@ export default defineConfig({
     viewport: { width: 1440, height: 1000 },
   },
   projects: [{ name: "server-sqlite" }, { name: "browser-indexeddb" }],
-  webServer: {
-    command: "npm run start",
-    url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 60000,
-  },
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: "npm run start",
+        url: "http://127.0.0.1:3000",
+        reuseExistingServer: !process.env.CI,
+        timeout: 60000,
+      },
 });

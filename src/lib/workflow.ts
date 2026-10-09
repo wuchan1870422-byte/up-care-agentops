@@ -33,7 +33,7 @@ export async function runConsultation(
   ctx: Context,
   input: unknown,
   onProgress?: (run: RecordRow<Run>) => void,
-  options: {beforeStep?:(tool:string)=>void;maxDurationMs?:number} = {},
+  options: { beforeStep?: (tool: string) => void; maxDurationMs?: number } = {},
 ) {
   authorize(ctx, ["service", "operator", "admin"]);
   const p = runSchema.parse(input);
@@ -42,8 +42,11 @@ export async function runConsultation(
     const old = get<Run>(ctx, p.retryOf, "run");
     if (old.data.status !== "failed")
       throw new AppError("仅可重试失败执行", 409);
-    if(p.text!==old.data.input||p.conversationId!==old.data.conversationId)
-      throw new AppError('重试必须保持原始输入和会话',409);
+    if (
+      p.text !== old.data.input ||
+      p.conversationId !== old.data.conversationId
+    )
+      throw new AppError("重试必须保持原始输入和会话", 409);
   }
   const reservation = idempotent(ctx, "run:" + p.key, JSON.stringify(p), () => {
     const conv = p.conversationId
@@ -62,21 +65,26 @@ export async function runConsultation(
       promptVersion: "rules-2.0",
       retryOf: p.retryOf,
     });
-    if(!p.retryOf) update(ctx, conv.id, {
-      ...conv.data,
-      messages: [
-        ...conv.data.messages,
-        { role: "user", text: p.text, at: new Date().toISOString() },
-      ],
-    });
+    if (!p.retryOf)
+      update(ctx, conv.id, {
+        ...conv.data,
+        messages: [
+          ...conv.data.messages,
+          { role: "user", text: p.text, at: new Date().toISOString() },
+        ],
+      });
     return { runId: run.id, conversationId: conv.id };
   });
   const row = get<Run>(ctx, reservation.runId, "run");
   if (row.data.nodes.length || row.data.status !== "running") return row;
   const run = row.data,
     started = performance.now();
-  let effectId=row.id;
-  for(let previous=p.retryOf;previous;){const old=get<Run>(ctx,previous,'run');effectId=old.id;previous=old.data.retryOf;}
+  let effectId = row.id;
+  for (let previous = p.retryOf; previous;) {
+    const old = get<Run>(ctx, previous, "run");
+    effectId = old.id;
+    previous = old.data.retryOf;
+  }
   let steps = 0;
   const save = () => {
     const saved = update(ctx, row.id, run);
@@ -102,7 +110,11 @@ export async function runConsultation(
     save();
     const at = performance.now();
     try {
-      if (steps > 12 || performance.now() - started > (options.maxDurationMs??15000)) throw new AppError("执行超过步数或时间限制", 408);
+      if (
+        steps > 12 ||
+        performance.now() - started > (options.maxDurationMs ?? 15000)
+      )
+        throw new AppError("执行超过步数或时间限制", 408);
       options.beforeStep?.(tool);
       const output = fn();
       event.status = "completed";
@@ -183,7 +195,17 @@ export async function runConsultation(
       }),
     );
     if (valid.ready) {
-      await step('Service Lead','createServiceLead',{conversationId:reservation.conversationId},()=>executeTool(ctx,'createServiceLead',{conversationId:reservation.conversationId,intent:run.intent,key:effectId+':lead'}));
+      await step(
+        "Service Lead",
+        "createServiceLead",
+        { conversationId: reservation.conversationId },
+        () =>
+          executeTool(ctx, "createServiceLead", {
+            conversationId: reservation.conversationId,
+            intent: run.intent,
+            key: effectId + ":lead",
+          }),
+      );
       await step(
         "Appointment Intent",
         "createAppointmentIntent",
@@ -215,7 +237,17 @@ export async function runConsultation(
           }) as RecordRow<Ticket>,
       );
       run.ticketId = ticket.id;
-      await step('Follow-up Task','createFollowUpTask',{ticketId:ticket.id},()=>executeTool(ctx,'createFollowUpTask',{ticketId:ticket.id,summary:'核实虚构预约意向、服务语言与保险问题；不发送外部通知。',key:effectId+':followup'}));
+      await step(
+        "Follow-up Task",
+        "createFollowUpTask",
+        { ticketId: ticket.id },
+        () =>
+          executeTool(ctx, "createFollowUpTask", {
+            ticketId: ticket.id,
+            summary: "核实虚构预约意向、服务语言与保险问题；不发送外部通知。",
+            key: effectId + ":followup",
+          }),
+      );
       const approval = executeTool(ctx, "requestHumanReview", {
         targetId: ticket.id,
         targetKind: "ticket",

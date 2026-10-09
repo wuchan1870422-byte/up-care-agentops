@@ -77,16 +77,36 @@ export function executeTool(
         break;
       case "listClinicLocations":
         z.object({}).strict().parse(input);
-        result=clinics.map(c=>({...c,source:'https://www.upclinic.cn/archives/13585',availability:'unverified'}));
+        result = clinics.map((c) => ({
+          ...c,
+          source: "https://www.upclinic.cn/archives/13585",
+          availability: "unverified",
+        }));
         break;
       case "createServiceLead": {
-        authorize(ctx,['service','operator','admin']);
-        const p=z.object({conversationId:z.string().uuid(),intent:intentSchema,key:z.string().min(8).max(200)}).parse(input);
-        get(ctx,p.conversationId,'conversation');
-        result=idempotent(ctx,p.key,JSON.stringify(p),()=>{
-          const contact=create(ctx,'customer',{displayName:'虚构联系人 '+p.conversationId.slice(0,6),conversationId:p.conversationId,fictional:true});
-          return create(ctx,'lead',{contactId:contact.id,conversationId:p.conversationId,intent:p.intent,status:'pending'});
-        });break;
+        authorize(ctx, ["service", "operator", "admin"]);
+        const p = z
+          .object({
+            conversationId: z.string().uuid(),
+            intent: intentSchema,
+            key: z.string().min(8).max(200),
+          })
+          .parse(input);
+        get(ctx, p.conversationId, "conversation");
+        result = idempotent(ctx, p.key, JSON.stringify(p), () => {
+          const contact = create(ctx, "customer", {
+            displayName: "虚构联系人 " + p.conversationId.slice(0, 6),
+            conversationId: p.conversationId,
+            fictional: true,
+          });
+          return create(ctx, "lead", {
+            contactId: contact.id,
+            conversationId: p.conversationId,
+            intent: p.intent,
+            status: "pending",
+          });
+        });
+        break;
       }
       case "getClinicInformation": {
         const p = z
@@ -270,7 +290,11 @@ export function decideApproval(ctx: Context, input: unknown) {
     const row = get<Approval>(ctx, p.id, "approval");
     if (row.data.status !== "pending") throw new AppError("该审核已处理", 409);
     const target = get<Ticket>(ctx, row.data.targetId, row.data.targetKind);
-    if(target.data.intent?.intent==='medical'&&!['reviewer','admin'].includes(ctx.role))throw new AppError('涉及医学判断的工单必须由医疗审核员处理',403);
+    if (
+      target.data.intent?.intent === "medical" &&
+      !["reviewer", "admin"].includes(ctx.role)
+    )
+      throw new AppError("涉及医学判断的工单必须由医疗审核员处理", 403);
     if (
       row.data.targetKind === "note" &&
       !["reviewer", "admin"].includes(ctx.role)

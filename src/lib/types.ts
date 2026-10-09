@@ -19,7 +19,10 @@ export type Kind =
   | "evaluation"
   | "note"
   | "customer"
-  | "lead";
+  | "lead"
+  | "integration"
+  | "prompt"
+  | "promptEvaluation";
 export type RecordRow<T = Record<string, unknown>> = {
   id: string;
   workspace: string;

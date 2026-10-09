@@ -1,5 +1,7 @@
 "use client";
 import { analytics } from "./analytics";
+import { qualityReport } from "./reports";
+import { mockAppointments } from "./integrations";
 import initSqlJs, { type Database, type SqlJsStatic } from "sql.js";
 import {
   setDatabaseFactory,
@@ -110,6 +112,17 @@ export function browserRequest<T>(
       let result: unknown;
       try {
         switch (endpoint) {
+          case "quality/report":
+            result = {
+              text: qualityReport(
+                context,
+                new URLSearchParams(query).get("batchId") ?? undefined,
+              ),
+            };
+            break;
+          case "mock/appointments":
+            result = mockAppointments(context);
+            break;
           case "session":
             result = context;
             break;

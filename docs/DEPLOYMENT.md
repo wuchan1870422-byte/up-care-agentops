@@ -6,6 +6,8 @@ Node 24.x。`npm ci` → `npm run db:init` → `npm run build` → `npm start`�
 
 ## Vercel 公开演示
 
+已验证公开地址：https://up-care-agentops.vercel.app 。GitHub：https://github.com/wuchan1870422-byte/up-care-agentops 。首版匿名访问及健康检查均返回 200，公开业务流程已实际运行测试。
+
 目标项目固定为 `wuchan1870422-byte/up-care-agentops`。配置见根目录 vercel.json。Vercel 环境使用浏览器独立存储，不启动本地 SQLite，不向用户承诺共享云数据库。
 
 ```bash
@@ -21,6 +23,8 @@ vercel deploy --prod
 本机 Vercel CLI 的默认配置目录曾触发 EXDEV，因此本次使用已忽略的项目内 `.vercel-cli`：命令追加 `--global-config .vercel-cli`。不要提交该目录。CLI 安装于 npm 缓存，不要求改变系统 PATH。
 
 ## 回滚与数据说明
+
+GitHub Actions 在 master push / pull request 时执行 Node 24 的类型、Lint、业务测试、规则评测、生产构建与两种存储模式的 Chromium E2E。工作流采用固定 action commit，仅读取仓库，不需要模型或部署 Secret。Vercel 已连接同名 GitHub 仓库，支持提交触发部署；CLI 也可执行明确目标的生产发布。
 
 代码回滚使用已验证的 Vercel 部署版本；不要删除用户本机 IndexedDB。新建演示空间只是切换当前浏览器上下文，旧记录仍保留。浏览器存储格式目前为 v1，未来数据迁移必须先保留旧快照。
 

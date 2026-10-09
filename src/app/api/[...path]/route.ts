@@ -1,4 +1,6 @@
 import { analytics } from "@/lib/analytics";
+import { qualityReport } from "@/lib/reports";
+import { mockAppointments } from "@/lib/integrations";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { AppError } from "@/lib/db";
@@ -49,10 +51,19 @@ export async function GET(req: NextRequest, { params }: Params) {
     if (path === "session") return sessionResponse(req);
     const ctx = session(req);
     switch (path) {
+      case "quality/report":
+        return json({
+          text: qualityReport(
+            ctx,
+            req.nextUrl.searchParams.get("batchId") ?? undefined,
+          ),
+        });
+      case "mock/appointments":
+        return json(mockAppointments(ctx));
       case "state":
         return json({
           ...workspaceState(ctx),
-          integrations: {
+          connections: {
             llm: { connected: false },
             embedding: { connected: false },
             coze: cozeStatus(),

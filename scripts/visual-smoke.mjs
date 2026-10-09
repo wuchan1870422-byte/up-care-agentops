@@ -8,7 +8,7 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1512, height: 1100 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
-await page.goto("http://127.0.0.1:3000");
+await page.goto(process.env.E2E_BASE_URL || "http://127.0.0.1:3000");
 await page.getByRole("heading", { name: "每一次服务，都有迹可循。" }).waitFor();
 await page.screenshot({
   path: "output/playwright/overview-desktop.png",

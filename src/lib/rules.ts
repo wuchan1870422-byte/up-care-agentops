@@ -192,6 +192,36 @@ export function draftResponse(intent: Intent, citations: Citation[]): string {
     response += english
       ? "Insurance coverage must be verified with the insurer. "
       : "保险权益需向保险方核实，不能承诺报销结果。";
+  if (intent.preferredLanguage === "en")
+    response += english
+      ? "Your English communication preference will need staff confirmation. "
+      : "已识别英语沟通需求，具体人员可用性须由客服核实。";
+  if (intent.intent === "clinic") {
+    const source = citations.findIndex(
+      (c) =>
+        c.source.startsWith("https://www.upclinic.cn/") &&
+        /Shanghai clinic locations/.test(c.content),
+    );
+    if (source >= 0) {
+      const available = clinics.filter(
+        (c) =>
+          citations[source].content.includes(c.english) &&
+          (!intent.clinic || c.id === intent.clinic),
+      );
+      if (available.length)
+        response += english
+          ? "Public clinic information lists " +
+            available.map((c) => c.english).join(", ") +
+            ". Contact your preferred clinic through the official website to verify physical therapy services and availability. [" +
+            (source + 1) +
+            "] "
+          : "公开资料列有" +
+            available.map((c) => c.name).join("、") +
+            "院区；具体服务与可用时间请通过官网联系门诊核实。[" +
+            (source + 1) +
+            "] ";
+    }
+  }
   if (intent.missing.length)
     response += english
       ? "Please provide " + intent.missing.join(" and ") + ". "
@@ -202,10 +232,12 @@ export function draftResponse(intent: Intent, citations: Citation[]): string {
         "。";
   response +=
     "\n" +
-    (english ? "Knowledge excerpts: " : "资料摘录：") +
+    (english
+      ? "Sources (see evidence panel): "
+      : "资料依据（完整片段见右侧）：") +
     citations
       .slice(0, 2)
-      .map((c, i) => `[${i + 1}] ${c.content}`)
+      .map((c, i) => `[${i + 1}] ${c.title} · v${c.version}`)
       .join("\n");
   return response;
 }

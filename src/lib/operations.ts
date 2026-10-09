@@ -1,4 +1,10 @@
 import { analytics } from "./analytics";
+import {
+  savePromptTemplate,
+  evaluatePromptTemplate,
+  promptLabState,
+} from "./prompt-lab";
+import { syncMockCRM } from "./integrations";
 import { z } from "zod";
 import {
   AppError,
@@ -39,20 +45,28 @@ export function workspaceState(
   const runs = list<Run>(ctx, "run").filter(
     (r) => !r.data.citations.some((c) => restricted.has(c.documentId)),
   );
-  const hiddenConversations=new Set(list<Run>(ctx,'run').filter(r=>r.data.citations.some(c=>restricted.has(c.documentId))).map(r=>r.data.conversationId));
+  const hiddenConversations = new Set(
+    list<Run>(ctx, "run")
+      .filter((r) => r.data.citations.some((c) => restricted.has(c.documentId)))
+      .map((r) => r.data.conversationId),
+  );
   return {
+    promptLab: promptLabState(ctx),
     role: ctx.role,
     workspace: ctx.workspace,
     mode: "demo",
     storage,
     analytics: analytics(ctx),
     dashboard: dashboard(ctx),
-    conversations: list(ctx, "conversation").filter(c=>!hiddenConversations.has(c.id)),
+    conversations: list(ctx, "conversation").filter(
+      (c) => !hiddenConversations.has(c.id),
+    ),
     runs,
     tickets: list(ctx, "ticket"),
     appointments: list(ctx, "appointment"),
     customers: list(ctx, "customer"),
     leads: list(ctx, "lead"),
+    integrations: list(ctx, "integration"),
     approvals: list(ctx, "approval"),
     qualities: list<Quality>(ctx, "quality").filter(
       (q) => !q.data.citations.some((c) => restricted.has(c.documentId)),
@@ -73,7 +87,10 @@ export function exportTickets(
   const tickets = list<Ticket>(ctx, "ticket").filter(
     (t) =>
       (!params.get("status") || t.data.status === params.get("status")) &&
-      (!params.get("clinic") || t.data.clinic === params.get("clinic")),
+      (!params.get("clinic") || t.data.clinic === params.get("clinic")) &&
+      (!params.get("from") ||
+        t.createdAt.slice(0, 10) >= params.get("from")!) &&
+      (!params.get("to") || t.createdAt.slice(0, 10) <= params.get("to")!),
   );
   const safe = (v: unknown) =>
     '"' +
@@ -107,6 +124,12 @@ export async function operation(
     throw new AppError("本演示空间已达容量上限，请新建演示空间", 429);
   const body = z.record(z.string(), z.unknown()).parse(raw);
   switch (path) {
+    case "prompt":
+      return savePromptTemplate(ctx, body);
+    case "prompt/evaluate":
+      return evaluatePromptTemplate(ctx, body);
+    case "mock/crm/sync":
+      return syncMockCRM(ctx, body);
     case "consult":
       return runConsultation(ctx, body, onProgress);
     case "approve":
@@ -138,16 +161,18 @@ export async function operation(
     case "quality": {
       authorize(ctx, ["service", "operator", "reviewer", "admin"]);
       const p = z
-        .object({ texts: z.array(textSchema).min(1).max(20) })
+        .object({
+          texts: z.array(textSchema).min(1).max(20),
+          batchId: z.string().uuid().optional(),
+        })
         .parse(body);
       return transaction(() =>
         p.texts.map((text) => {
           const citations = searchKnowledge(ctx, "客服 医疗 保险 规范");
-          const row = create(
-            ctx,
-            "quality",
-            runResponseQualityCheck(text, citations),
-          );
+          const row = create(ctx, "quality", {
+            ...runResponseQualityCheck(text, citations),
+            batchId: p.batchId,
+          });
           audit(ctx, "quality.created", row.id, {
             riskCount: row.data.risks.length,
           });

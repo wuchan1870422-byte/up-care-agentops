@@ -37,6 +37,10 @@ import {
   downloadTickets,
 } from "@/lib/transport";
 import { AnalyticsView } from "./analytics-view";
+import { PromptLab } from "./prompt-lab";
+import type { promptLabState } from "@/lib/prompt-lab";
+import { QualityBatch } from "./quality-batch";
+import { MockIntegrations } from "./mock-integrations";
 import type { analytics } from "@/lib/analytics";
 import type {
   Approval,
@@ -51,6 +55,7 @@ import type {
 } from "@/lib/types";
 
 type View =
+  | "prompts"
   | "conversations"
   | "analytics"
   | "overview"
@@ -82,6 +87,9 @@ type Evaluation = {
   }[];
 };
 type State = {
+  promptLab: ReturnType<typeof promptLabState>;
+  leads: RecordRow<unknown>[];
+  integrations: RecordRow<{ leadId: string }>[];
   analytics: ReturnType<typeof analytics>;
   appointments: RecordRow<{ clinic: string; time: string; status: string }>[];
   storage: "sqlite" | "browser";
@@ -144,6 +152,7 @@ const nav = [
   { id: "followup", label: "随访辅助", icon: LifeBuoy },
   { id: "notes", label: "文书辅助", icon: FileText },
   { id: "evaluation", label: "Evaluation Lab", icon: FlaskConical },
+  { id: "prompts", label: "Prompt Lab", icon: FlaskConical },
   { id: "audit", label: "运行与审计", icon: ClipboardCheck },
   { id: "settings", label: "系统设置", icon: Settings },
 ] as const;
@@ -281,7 +290,7 @@ export default function Workspace({
     [query, setQuery] = useState("保险报销"),
     [citations, setCitations] = useState<Citation[] | null>(null),
     [followText, setFollowText] = useState(
-      "2026-10-01：虚构患者表示仍有不适，咨询下次到院时间。\n2026-10-08：尚未核实保险材料，待客服跟进。",
+      "2026-10-01：虚构患者表示仍有不适，咨询下次到院时间。\n2026-10-08：尚未核实保险材料，待客服跟进。\n2026-10-09：希望用英语沟通，下次到院时间仍待确认。",
     ),
     [soapText, setSoapText] = useState(
       "虚构患者自述：跑步后膝盖不舒服。未提供检查记录。",
@@ -311,6 +320,44 @@ export default function Workspace({
     }, 700);
     return () => clearInterval(timer);
   }, [busy, refresh]);
+  useEffect(() => {
+    if (!selectedTicket || view !== "tickets") return;
+    const previous = document.activeElement as HTMLElement | null;
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
+    const controls = () =>
+      Array.from(
+        dialog?.querySelectorAll<HTMLElement>(
+          "button:not(:disabled),textarea,input,select,a[href]",
+        ) ?? [],
+      );
+    controls()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedTicket(undefined);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const items = controls(),
+        first = items[0],
+        last = items.at(-1);
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (previous?.isConnected && previous !== document.body) previous.focus();
+      else
+        document
+          .querySelector<HTMLElement>(`[data-ticket-id="${selectedTicket}"]`)
+          ?.focus();
+    };
+  }, [selectedTicket, view]);
   async function act<T>(fn: () => Promise<T>, message = "操作已保存") {
     setBusy(true);
     setError("");
@@ -1452,6 +1499,7 @@ export default function Workspace({
               )}
               {view === "quality" && (
                 <>
+                  <QualityBatch onComplete={refresh} />
                   <div className="two-column">
                     <Panel
                       title="客服回复检查"
@@ -2127,8 +2175,16 @@ export default function Workspace({
                   </div>
                 </Panel>
               )}
+              {view === "prompts" && (
+                <PromptLab data={state.promptLab} onComplete={refresh} />
+              )}
               {view === "settings" && (
                 <div className="two-column">
+                  <MockIntegrations
+                    leads={state.leads}
+                    integrations={state.integrations}
+                    onComplete={refresh}
+                  />
                   <Panel
                     title="集成连接状态"
                     sub="当前无外部账号连接，不产生模型调用费用"
@@ -2231,7 +2287,11 @@ function TicketTable({
           {rows.map((t) => (
             <tr key={t.id}>
               <td>
-                <button className="table-title" onClick={() => onSelect(t.id)}>
+                <button
+                  className="table-title"
+                  data-ticket-id={t.id}
+                  onClick={() => onSelect(t.id)}
+                >
                   {t.data.title}
                   <small>
                     #{t.id.slice(0, 8)} ·{" "}

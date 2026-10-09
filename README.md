@@ -7,7 +7,7 @@ An independently built clinic operations demo that connects bilingual service in
 从一句虚构患者咨询开始，查看实际工作流节点、知识来源、预约意向与服务工单，切换演示角色完成审核，再核对运营数据。页面上的执行状态、耗时和统计来自实际操作。
 
 - GitHub：[wuchan1870422-byte/up-care-agentops](https://github.com/wuchan1870422-byte/up-care-agentops)
-- Live Demo：部署验证后在此记录，不使用预测地址。
+- Live Demo：[up-care-agentops.vercel.app](https://up-care-agentops.vercel.app)（公开访问，浏览器独立保存虚构数据）
 - 完整需求：[MASTER_SPEC](docs/MASTER_SPEC.md)；接续开发：[PROJECT_STATE](PROJECT_STATE.md) 与 [TASKS](TASKS.md)。
 
 ![运营工作台](docs/screenshots/overview-desktop.png)
@@ -19,7 +19,7 @@ An independently built clinic operations demo that connects bilingual service in
 |---|---|
 | AI Command Center | 中英咨询、多轮补问、真实 SSE 节点流、执行轨迹、工单与引用联动 |
 | Service Agent | 规则意图与字段提取，语言偏好、人工转接、受控业务工具、幂等与失败重试 |
-| Service Quality | 疗效、医学判断、保险、预约、敏感信息及不当表达检查，批量 20 条、人工复核 |
+| Service Quality | 疗效、医学判断、保险、预约、敏感信息及不当表达检查，TXT/JSON 导入最多 20 条、人工复核、报告下载 |
 | Knowledge Hub | TXT/Markdown 上传，本地模式支持文本 PDF；分块、关键词排序、引用、版本、失效及权限 |
 | Workflow Studio | 五种预定义业务流程入口、咨询节点回放；没有冒充可用的任意拖拽编辑器 |
 | CRM & Tasks | 虚构联系人、线索、预约意向、工单、负责人、备注、状态流转、跟进任务、CSV |
@@ -27,6 +27,8 @@ An independently built clinic operations demo that connects bilingual service in
 | Documentation | 保守 SOAP 草稿：S 原文，O 未提供，A/P 留给医疗人员；专业审核 |
 | Analytics | 真实记录汇总、日期/院区筛选、趋势、意图与风险分布、处理耗时 |
 | Evaluation & Audit | 77 条独立虚构评测案例、结果历史、工具审计、运行 ID 与节点耗时 |
+| Prompt Lab | 不可变模板版本、6 条模板规则检查、实际风险与版本差异；未调用 LLM |
+| Integration Sandbox | 当前空间的 Mock Appointment 查询、幂等 Mock CRM 同步及审计 |
 
 ## 运行模式与诚信边界
 

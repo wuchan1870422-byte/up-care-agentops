@@ -94,3 +94,18 @@ export async function consultStream(
   if (!result) throw new Error("执行流已中断，请查看执行历史，重试前核对工单");
   return result;
 }
+
+export async function downloadQualityReport(batchId?: string) {
+  const path =
+    "quality/report" +
+    (batchId ? "?batchId=" + encodeURIComponent(batchId) : "");
+  const report = await api<{ text: string }>(path);
+  const url = URL.createObjectURL(
+    new Blob([report.text], { type: "text/plain;charset=utf-8" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "upcare-quality-report.txt";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

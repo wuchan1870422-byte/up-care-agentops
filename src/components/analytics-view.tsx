@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { api } from "@/lib/transport";
+import { api, downloadTickets } from "@/lib/transport";
 type Report = {
   trend: { date: string; runs: number; tickets: number }[];
   states: { status: string; count: number }[];
@@ -29,6 +29,7 @@ export function AnalyticsView({ initial }: { initial: Report }) {
     [clinic, setClinic] = useState(""),
     [from, setFrom] = useState(""),
     [to, setTo] = useState(""),
+    [status, setStatus] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (
@@ -83,7 +84,37 @@ export function AnalyticsView({ initial }: { initial: Report }) {
           onChange={(e) => setTo(e.target.value)}
         />
         <button disabled={busy}>查询分析</button>
+        <select
+          aria-label="导出工单状态"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">导出全部状态</option>
+          {["pending", "approved", "in_progress", "completed", "rejected"].map(
+            (s) => (
+              <option key={s} value={s}>
+                {labels[s]}
+              </option>
+            ),
+          )}
+        </select>
+        <button
+          type="button"
+          className="secondary"
+          disabled={busy}
+          onClick={() =>
+            void downloadTickets(
+              "?" + new URLSearchParams({ clinic, from, to, status }),
+            ).catch((e) => setError(e.message))
+          }
+        >
+          导出筛选工单 CSV
+        </button>
       </form>
+      <p className="muted">
+        日期按 UTC 统计；CSV
+        使用当前院区、日期与工单状态条件，需管理者或管理员角色。
+      </p>
       {error && <p role="alert">{error}</p>}
       <div className="metric-grid">
         {[

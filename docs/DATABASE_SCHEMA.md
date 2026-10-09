@@ -49,6 +49,9 @@ erDiagram
 | AgentRun / AgentStep | run；节点数组含时间、输入输出和状态 |
 | WorkflowDefinition | 版本控制中的五个预定义流程 |
 | EvaluationCase / Run | 代码中的 77 个案例；evaluation 保存每次实际结果 |
+| PromptTemplate | prompt；不可变 version、parentId、模板及变更说明 |
+| TemplateEvaluation | promptEvaluation；关联 promptId/version、数据集、六案例实际输出、风险、耗时；非模型评测 |
+| IntegrationRecord | integration；虚构 leadId、Mock CRM 外部编号、synced_locally；无外部发送 |
 | AuditLog | audit 表，按空间查询 |
 
 索引：records(workspace,kind,created_at)、audit(workspace,created_at)、idempotency(workspace,key) 唯一约束。关联对象必须在当前工作空间中存在；业务 JSON 内的引用不是数据库外键，依靠 Service 校验。因此这是已验证的演示模型，不应宣称已完成 Master Spec 的规范化 PostgreSQL 模型。

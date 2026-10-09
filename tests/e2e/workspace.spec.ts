@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 const nav = (page: Page, name: string) =>
   page
     .locator("nav")
@@ -179,4 +180,119 @@ test("new demo workspace resets current browser without deleting old data", asyn
   await expect(page.getByRole("status")).toContainText("已切换");
   await nav(page, "运营总览");
   await expect(page.locator(".metric").first()).toContainText("00");
+});
+
+test("quality file import saves records and downloads an authorized report", async ({
+  page,
+}) => {
+  await role(page, "reviewer");
+  await nav(page, "服务质检");
+  await page.getByLabel("导入质检文件").setInputFiles({
+    name: "fictional.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify(["保险肯定能报销", "需要人工核实服务信息"]),
+    ),
+  });
+  await expect(page.locator(".quality-item")).toHaveCount(2);
+  await expect(page.getByLabel("批量质检进度")).toHaveAttribute("value", "2");
+  const downloadEvent = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出本批次报告" }).click();
+  const download = await downloadEvent;
+  const path = await download.path();
+  expect(path).toBeTruthy();
+  const content = await readFile(path!, "utf8");
+  expect(content).toContain("检查记录：2");
+  expect(content).toContain("保险肯定能报销");
+  await page.reload();
+  await nav(page, "服务质检");
+  await expect(page.locator(".quality-item")).toHaveCount(2);
+});
+test("mock integrations use saved intentions and persist idempotent CRM sync", async ({
+  page,
+}) => {
+  await run(page);
+  await role(page, "operator");
+  await nav(page, "系统设置");
+  await page.getByRole("button", { name: "查询模拟预约接口" }).click();
+  await expect(
+    page.getByText("模拟预约接口返回 1 条意向；排班状态：未核实。"),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "模拟同步 CRM" }).click();
+  await expect(page.getByRole("button", { name: "已模拟同步" })).toBeDisabled();
+  await page.reload();
+  await nav(page, "系统设置");
+  await expect(page.getByRole("button", { name: "已模拟同步" })).toBeDisabled();
+});
+test("ticket dialog closes with Escape and restores trigger focus", async ({
+  page,
+}) => {
+  await run(page);
+  await page.locator(".ticket-link").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator("[data-ticket-id]").first()).toBeFocused();
+});
+test("English inquiry produces grounded service information", async ({
+  page,
+}) => {
+  await nav(page, "Agent 工作台LIVE");
+  await page
+    .getByLabel("患者咨询内容")
+    .fill("Could you tell me about rehabilitation services at Qiantan clinic?");
+  await page.getByRole("button", { name: "运行 Agent", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("执行记录已保存");
+  await expect(page.locator(".outcome")).toContainText("Qiantan");
+  await expect(page.locator(".outcome")).toContainText("official website");
+});
+
+test("prompt versions expose real regressions and survive refresh", async ({
+  page,
+}) => {
+  await role(page, "admin");
+  await nav(page, "Prompt Lab");
+  await page.getByRole("button", { name: "保存模板新版本" }).click();
+  await page.getByRole("button", { name: "检查模板 v1", exact: true }).click();
+  await expect(page.locator(".eval-details summary")).toContainText("6/6");
+  await page
+    .getByLabel("回复模板", { exact: true })
+    .fill("{{draft}}\n保险肯定能报销。");
+  await page
+    .getByLabel("版本说明", { exact: true })
+    .fill("故意引入承诺，验证风险回归");
+  await page.getByRole("button", { name: "保存模板新版本" }).click();
+  await page.getByRole("button", { name: "检查模板 v2", exact: true }).click();
+  await expect(
+    page.locator(".info-box").filter({ hasText: "最新 v2" }),
+  ).toContainText("通过项变化 -6");
+  await page.reload();
+  await nav(page, "Prompt Lab");
+  await expect(
+    page.getByRole("button", { name: "检查模板 v2", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".eval-details")).toHaveCount(2);
+});
+
+test("analytics filters stored activity and exports matching tickets", async ({
+  page,
+}) => {
+  await run(page);
+  await role(page, "manager");
+  await nav(page, "运营分析");
+  await page.getByLabel("分析院区").selectOption("gubei");
+  await page.getByRole("button", { name: "查询分析", exact: true }).click();
+  await expect(page.locator(".metric").first().locator("strong")).toHaveText(
+    "0",
+  );
+  await page.getByLabel("分析院区").selectOption("qiantan");
+  await page.getByRole("button", { name: "查询分析", exact: true }).click();
+  await expect(page.locator(".metric").first().locator("strong")).toHaveText(
+    "1",
+  );
+  await page.getByLabel("导出工单状态").selectOption("pending");
+  const event = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出筛选工单 CSV" }).click();
+  const path = await (await event).path();
+  expect(await readFile(path!, "utf8")).toContain("qiantan");
 });
