@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {audit,authorize,create,get,idempotent,list,update,AppError,transaction} from './db';
 import {clinics,extractServiceIntent,runResponseQualityCheck,textSchema} from './rules';
 import {searchKnowledge} from './knowledge';
-import type {Approval,Context,Intent,Run,Ticket} from './types';
+import type {Approval,Context,Run,Ticket} from './types';
 const intentSchema=z.object({intent:z.enum(['appointment','insurance','clinic','medical','unknown']),clinic:z.enum(['qiantan','jingan','gubei','xintiandi']).nullable(),time:z.string().max(100).nullable(),language:z.enum(['zh','en','mixed']),insurance:z.boolean(),missing:z.array(z.string()),escalation:z.boolean()});
 const ticketSchema=z.object({title:z.string().trim().min(2).max(200),clinic:z.enum(['qiantan','jingan','gubei','xintiandi']).nullable().default(null),priority:z.enum(['normal','high']).default('normal'),conversationId:z.string().uuid().optional(),runId:z.string().uuid().optional(),intent:intentSchema.optional(),key:z.string().min(8).max(200)});
 export const toolNames=['searchKnowledge','getClinicInformation','extractServiceIntent','createAppointmentIntent','createServiceTicket','getServiceTicket','updateTicketStatus','createFollowUpTask','requestHumanReview','runResponseQualityCheck','saveAgentTrace'] as const;

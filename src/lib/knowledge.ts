@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {authorize,create,get,list,update,audit} from './db';
 import type {Citation,Context,Document} from './types';
-export const documentSchema=z.object({id:z.string().uuid().optional(),title:z.string().trim().min(2).max(180),content:z.string().trim().min(10).max(100000),source:z.string().max(600).refine(v=>!v||/^https?:\/\//i.test(v),'来源必须是 HTTP(S) 地址'),visibility:z.enum(['all','reviewer']).default('all'),active:z.boolean().default(true)});
+export const documentSchema=z.object({id:z.string().uuid().optional(),title:z.string().trim().min(2).max(180),content:z.string().trim().min(10).max(100000),source:z.string().max(600).refine(v=>!v||/^https?:\/\//i.test(v),'来源必须是 HTTP(S) 地址').default(''),visibility:z.enum(['all','reviewer']).default('all'),active:z.boolean().default(true)});
 export function chunk(content:string):string[] { const out:string[]=[];for(let i=0;i<content.length;i+=500)out.push(content.slice(i,i+650));return out; }
 export function saveDocument(ctx:Context,input:unknown) {authorize(ctx,['admin','reviewer']);const p=documentSchema.parse(input);const old=p.id?get<Document>(ctx,p.id,'document'):undefined;const data:Document={title:p.title,content:p.content,source:p.source,visibility:p.visibility,active:p.active,version:(old?.data.version??0)+1,versions:old?[...old.data.versions,{version:old.data.version,content:old.data.content,at:old.updatedAt}]:[],chunks:chunk(p.content)};const result=old?update(ctx,old.id,data):create(ctx,'document',data);audit(ctx,'knowledge.indexed',result.id,{version:data.version,chunks:data.chunks.length});return result;}
 export function accessibleDocuments(ctx:Context){return list<Document>(ctx,'document').filter(r=>r.data.visibility==='all'||['reviewer','admin'].includes(ctx.role));}
