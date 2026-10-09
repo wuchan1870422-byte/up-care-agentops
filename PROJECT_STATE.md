@@ -3,33 +3,31 @@
 更新时间：2026-10-09（Asia/Shanghai）
 
 ## 当前阶段
-Phase 2 核心闭环验证中。项目在原目录继续开发，未重新创建。
+规则演示核心功能已实现并通过本地与浏览器双模式回归；进入公网发布及交付完善。完整原始需求保存在 docs/MASTER_SPEC.md，没有重新创建工程。
 
-## 本次已验证
-- 完整原始需求已保存 docs/MASTER_SPEC.md；继承代码以 d1fc26c 提交保留。
-- 补齐 globals.css：深蓝青绿设计、三屏咨询、移动端和深色模式。
-- Next.js 16.4.0 生产构建成功，服务在 127.0.0.1:3000 启动成功。
-- 51 项业务测试通过，涵盖质检、RAG、权限、隔离、幂等、审批及状态流转；ESLint 通过。
-- 现有规则评测 100/100 通过，但仅为 20 个基础场景的变体，后续扩展独立案例。
-- 修复 Master Scenario B 疗效承诺漏检及否定词跨句干扰。
-- 完整 Chromium 已下载；Headless Shell 下载失败，改用 Chromium channel 验证。
+## 已验证
+- Next.js 16.4.0 生产构建、TypeScript、ESLint 通过。
+- 69 项 Vitest 业务/恢复测试通过。
+- 28 项 Playwright E2E 通过（14 场景 × SQLite 服务端 / IndexedDB 浏览器模式，34.2 秒）。
+- 77 条独立 Agent 评测通过；非 LLM 或临床基准。
+- 桌面/390px 手机页面检查无脚本错误或整页横向溢出。
+- 数据库迁移与独立空间 Seed 实际运行成功。
 
-## 已写入，待验证
-- Next.js / TypeScript 基础配置。
-- SQLite 数据访问、独立演示空间、服务端角色校验与审计。
-- 咨询、关键词检索、质检、预约意向、工单和审核工作流。
-- 文档版本与分块、随访摘录、SOAP 保守草稿、规则评测。
+## 关键实现
+三栏工作台、真实 SSE、双语规则与语言偏好、多轮补问、真实关键词检索与版本、质检、联系人/线索/意向/工单/任务/审批、随访摘录、SOAP 边界、会话列表、运营分析、审计及 CSV。失败重试沿用原始 Run 幂等键。
 
-## 环境
-- Node 24.15.0，npm 11.12.1，Git 2.53.0。
-- 沙箱内 npm DNS 返回 ENOTFOUND；首次主机联网安装返回 ECONNRESET。
-- 正在使用 npm.cmd 和已获准的主机网络重试依赖安装。
-- GitHub App 可识别用户，但项目远程仓库尚不存在；本地没有可用 GitHub 写入凭据。
+公开版使用 SQLite WASM + IndexedDB 独立浏览器存储。本地版使用 Node SQLite 文件数据库，保留服务端校验。不是共享 PostgreSQL 生产后端。
 
-## 下一步
-完成交互界面 → 安装依赖 → 类型检查和业务测试 → 浏览器验证 → 修复 → 完善文档。
+## 发布状态
+- GitHub 仓库已创建：https://github.com/wuchan1870422-byte/up-care-agentops
+- GitHub CLI 已授权 repo，准备推送。
+- Vercel CLI 已登录 wuchan1870422-byte，已创建并明确链接 up-care-agentops。
+- 项目 ID prj_l8rZTLOcMdc7QfwWP5IQjj5anpfz，尚待完成首次部署验证。
+- 本地 Vercel 配置使用忽略目录 .vercel-cli，默认目录存在 EXDEV 问题。
 
-## 外部配置
-真实 LLM、Coze、Embedding、云数据库、Vercel 尚未连接。仓库尚未配置远程地址。
-OpenAI Key 已完成项目选择，但本地保存未批准：没有创建或写入任何 Key。
-这些状态不影响本地 Demo Mode 开发，不应伪装为已连接。
+## 外部能力
+OpenAI Key 的本地保存未批准，未创建或写入 Key。真实 LLM、Embedding、Coze 与托管 PostgreSQL 未连接。状态矩阵公开记录这些差距，不冒充已完成。
+
+## 接续任务
+推送源码 → 部署并验证公网六场景 → 补齐 CI、管理报告和剩余可独立功能 → 更新文档与最终链接。参见 TASKS.md。
+

@@ -1,1 +1,44 @@
-{"name":"up-care-agentops","version":"0.1.0","private":true,"scripts":{"dev":"next dev --hostname 127.0.0.1","build":"next build","start":"next start --hostname 127.0.0.1","typecheck":"tsc --noEmit","test":"vitest run","test:e2e":"playwright test","evaluate":"tsx scripts/evaluate.ts"},"dependencies":{"lucide-react":"^0.577.0","next":"^16.2.0","pdf-parse":"^2.4.5","react":"^19.2.0","react-dom":"^19.2.0","zod":"^4.3.0"},"devDependencies":{"@playwright/test":"^1.58.0","@types/node":"^24.0.0","@types/react":"^19.2.0","@types/react-dom":"^19.2.0","eslint":"^9.39.1","eslint-config-next":"^16.4.0","tsx":"^4.21.0","typescript":"^5.9.3","vitest":"^4.0.0"}}
+{
+  "name": "up-care-agentops",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "evaluate": "tsx scripts/evaluate.ts",
+    "prebuild": "node scripts/prepare-assets.mjs",
+    "predev": "node scripts/prepare-assets.mjs",
+    "lint": "eslint .",
+    "format": "prettier --write src tests scripts *.ts *.mjs",
+    "db:init": "tsx scripts/db-init.ts"
+  },
+  "dependencies": {
+    "lucide-react": "^0.577.0",
+    "next": "^16.2.0",
+    "pdf-parse": "^2.4.5",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sql.js": "^1.14.2",
+    "zod": "^4.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/sql.js": "^1.4.11",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.4.0",
+    "prettier": "^3.9.9",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}

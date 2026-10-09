@@ -1,5 +1,46 @@
-import {z} from 'zod';
-import {AppError,audit,authorize} from './db';
-import type {Context} from './types';
-export function cozeStatus(){return {connected:false,configured:Boolean(process.env.COZE_API_TOKEN&&process.env.COZE_WORKFLOW_ID),verified:false};}
-export async function runCoze(ctx:Context,input:unknown){authorize(ctx,['admin']);const p=z.object({text:z.string().min(2).max(8000)}).parse(input);if(!process.env.COZE_API_TOKEN||!process.env.COZE_WORKFLOW_ID)throw new AppError('Coze 未配置服务端 Token 或 Workflow ID',503);const started=performance.now();try{const response=await fetch('https://api.coze.cn/v1/workflow/run',{method:'POST',headers:{Authorization:`Bearer ${process.env.COZE_API_TOKEN}`,'Content-Type':'application/json'},body:JSON.stringify({workflow_id:process.env.COZE_WORKFLOW_ID,parameters:{input:p.text}}),signal:AbortSignal.timeout(20000)});if(!response.ok)throw new AppError(`Coze HTTP ${response.status}`,502);const body=z.object({code:z.number(),data:z.string().optional()}).parse(await response.json());if(body.code!==0)throw new AppError(`Coze 业务错误 ${body.code}`,502);audit(ctx,'coze.completed','',{durationMs:performance.now()-started});return {data:body.data,verified:true};}catch(error){audit(ctx,'coze.failed','',{durationMs:performance.now()-started});if(error instanceof AppError)throw error;throw new AppError('Coze 超时或响应格式不符合预期',502);}}
+import { z } from "zod";
+import { AppError, audit, authorize } from "./db";
+import type { Context } from "./types";
+export function cozeStatus() {
+  return {
+    connected: false,
+    configured: Boolean(
+      process.env.COZE_API_TOKEN && process.env.COZE_WORKFLOW_ID,
+    ),
+    verified: false,
+  };
+}
+export async function runCoze(ctx: Context, input: unknown) {
+  authorize(ctx, ["admin"]);
+  const p = z.object({ text: z.string().min(2).max(8000) }).parse(input);
+  if (!process.env.COZE_API_TOKEN || !process.env.COZE_WORKFLOW_ID)
+    throw new AppError("Coze 未配置服务端 Token 或 Workflow ID", 503);
+  const started = performance.now();
+  try {
+    const response = await fetch("https://api.coze.cn/v1/workflow/run", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.COZE_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        workflow_id: process.env.COZE_WORKFLOW_ID,
+        parameters: { input: p.text },
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!response.ok) throw new AppError(`Coze HTTP ${response.status}`, 502);
+    const body = z
+      .object({ code: z.number(), data: z.string().optional() })
+      .parse(await response.json());
+    if (body.code !== 0) throw new AppError(`Coze 业务错误 ${body.code}`, 502);
+    audit(ctx, "coze.completed", "", {
+      durationMs: performance.now() - started,
+    });
+    return { data: body.data, verified: true };
+  } catch (error) {
+    audit(ctx, "coze.failed", "", { durationMs: performance.now() - started });
+    if (error instanceof AppError) throw error;
+    throw new AppError("Coze 超时或响应格式不符合预期", 502);
+  }
+}

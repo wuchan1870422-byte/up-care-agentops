@@ -1,17 +1,37 @@
-import {chromium} from '@playwright/test';
-import {mkdirSync} from 'node:fs';
-mkdirSync('output/playwright',{recursive:true});
-const browser=await chromium.launch({headless:true,channel:'chromium'});
-const page=await browser.newPage({viewport:{width:1512,height:1100}});
-const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://127.0.0.1:3000');
-await page.getByRole('heading',{name:'每一次服务，都有迹可循。'}).waitFor();
-await page.screenshot({path:'output/playwright/overview-desktop.png',fullPage:true});
-await page.getByRole('button',{name:'Launch Interactive Demo'}).click();
-await page.getByRole('button',{name:'运行 Agent',exact:true}).click();
-await page.getByRole('status').filter({hasText:'执行记录已保存'}).waitFor();
-await page.screenshot({path:'output/playwright/command-desktop.png',fullPage:true});
-await page.setViewportSize({width:390,height:844});
-await page.screenshot({path:'output/playwright/command-mobile.png',fullPage:true});
-console.log(JSON.stringify({errors,horizontalOverflow:await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)}));
+import { chromium } from "@playwright/test";
+import { mkdirSync } from "node:fs";
+mkdirSync("output/playwright", { recursive: true });
+const browser = await chromium.launch({
+  headless: true,
+  channel: process.env.PLAYWRIGHT_CHANNEL || "msedge",
+});
+const page = await browser.newPage({ viewport: { width: 1512, height: 1100 } });
+const errors = [];
+page.on("pageerror", (e) => errors.push(e.message));
+await page.goto("http://127.0.0.1:3000");
+await page.getByRole("heading", { name: "每一次服务，都有迹可循。" }).waitFor();
+await page.screenshot({
+  path: "output/playwright/overview-desktop.png",
+  fullPage: true,
+});
+await page.getByRole("button", { name: "Launch Interactive Demo" }).click();
+await page.getByRole("button", { name: "运行 Agent", exact: true }).click();
+await page.getByRole("status").filter({ hasText: "执行记录已保存" }).waitFor();
+await page.screenshot({
+  path: "output/playwright/command-desktop.png",
+  fullPage: true,
+});
+await page.setViewportSize({ width: 390, height: 844 });
+await page.screenshot({
+  path: "output/playwright/command-mobile.png",
+  fullPage: true,
+});
+console.log(
+  JSON.stringify({
+    errors,
+    horizontalOverflow: await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  }),
+);
 await browser.close();

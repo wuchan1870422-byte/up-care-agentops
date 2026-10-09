@@ -7,3 +7,10 @@ data/
 test-results/
 playwright-report/
 *.tsbuildinfo
+.vercel/
+.vercel-cli/
+public/sql-wasm.wasm
+output/
+.tools/
+.vercel
+.env*

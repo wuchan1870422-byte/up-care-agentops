@@ -1,0 +1,10 @@
+.git
+.tools
+.vercel-cli
+.npm-cache
+data
+output
+test-results
+playwright-report
+.env*
+!.env.example
