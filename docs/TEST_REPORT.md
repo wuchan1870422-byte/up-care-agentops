@@ -9,6 +9,8 @@
 | Next 生产构建 | 通过 |
 | Vitest 业务/集成 | 90 / 90 通过 |
 | Playwright E2E | 40 / 40 通过，51.4 秒；20 条场景 × 两种存储模式 |
+| 生产公网 E2E | 20 / 20 通过，77.36 秒；匿名 Microsoft Edge，无跳过或失败 |
+| GitHub Actions | 37914795358 成功；Ubuntu Chromium 完整检查及 40 项 E2E |
 | Agent Evaluation | 77 / 77 通过；仅规则、关键词检索及工具，不是 LLM 评测 |
 | 浏览器 smoke | 无 pageerror；390px 宽度无整页横向溢出 |
 | npm audit --omit=dev | 0 项生产依赖漏洞 |
@@ -41,6 +43,6 @@ E2E：初始空状态、十节点预约流程、人工审核与完成工单、�
 
 真实 LLM/Coze/Embedding、云 PostgreSQL、真实多用户认证、外部医疗系统、浏览器自动化之外的专业无障碍审查和临床安全有效性。
 
-首版公开地址已通过 14 项 E2E（53.3 秒），匿名首页与健康接口均为 200。新增功能的最终部署与公网回归记录见 DELIVERY.md。
+最新公开地址通过 20 项 E2E（77.36 秒），匿名首页与健康接口均为 200。最终部署与公网回归记录见 DELIVERY.md。
 
 可复现命令见 README。完整机器结果在忽略目录 output；交付截图保存在 docs/screenshots，测试源码在 tests。

@@ -10,7 +10,17 @@
 
 已完成咨询 CSS 与页面构建恢复，咨询—检索—质检—预约意向—工单—人工审批—运营分析的持久化演示闭环。新增批量文件导入、质检报告、模拟 CRM 和预约接口、Prompt 模板版本及规则回归比较、筛选 CSV、失败幂等恢复和键盘操作修复。
 
-当前代码通过 90 项 Vitest、77 条独立业务评测、40 项本地双模式 E2E、TypeScript、ESLint 和 Next 生产构建。首版公网 14 项 E2E 已通过；本次更新的最终生产部署及 20 项公网回归正在执行，结果会写回本文。
+当前代码通过 90 项 Vitest、77 条独立业务评测、40 项本地双模式 E2E（51.4 秒）、TypeScript、ESLint 和 Next 生产构建。最终生产版本通过 20 项匿名公网 E2E（77.36 秒，无失败/跳过）。
+
+验证应用提交：`3efed9f8826b7141e5069e19b4361609c1c4c79f`。
+
+- [成功的 GitHub Actions](https://github.com/wuchan1870422-byte/up-care-agentops/actions/runs/37914795358)：Ubuntu + Chromium，完整工程检查和 40 项 E2E。
+- Vercel 部署：`dpl_DNtYc2Jmo4gq63vDe5Gz2yok2ngN`，状态 Ready，生产域名已指向该应用版本；后续纯文档提交可触发同一应用的重新部署。
+- 匿名 `/api/health`：HTTP 200，`status=ok, mode=demo, storage=browser, modelCalled=false`。
+- 桌面与 390px 手机检查：无 pageerror、无整页横向溢出；最终截图在 screenshots/。
+- GitHub 与 Vercel 已连接，后续提交可自动部署；无需在 GitHub Actions 配置模型或部署密钥。
+
+交付文档更新未改变上述已测应用代码。
 
 ## 明确边界
 

@@ -8,16 +8,25 @@ An independently built clinic operations demo that connects bilingual service in
 
 - GitHub：[wuchan1870422-byte/up-care-agentops](https://github.com/wuchan1870422-byte/up-care-agentops)
 - Live Demo：[up-care-agentops.vercel.app](https://up-care-agentops.vercel.app)（公开访问，浏览器独立保存虚构数据）
+- 已验证：90 项工程测试、40 项本地 E2E、20 项公网 E2E、77 条业务评测；[交付与验证记录](docs/DELIVERY.md)。
 - 完整需求：[MASTER_SPEC](docs/MASTER_SPEC.md)；接续开发：[PROJECT_STATE](PROJECT_STATE.md) 与 [TASKS](TASKS.md)。
 
 ![运营工作台](docs/screenshots/overview-desktop.png)
 ![咨询与执行轨迹](docs/screenshots/command-desktop.png)
 
+<details>
+<summary>查看质检与模板实验截图</summary>
+
+![批量质检与报告](docs/screenshots/quality-desktop.png)
+![模板版本回归](docs/screenshots/prompt-lab-desktop.png)
+
+</details>
+
 ## 可操作的功能
 
 | 模块 | 当前实现 |
 |---|---|
-| AI Command Center | 中英咨询、多轮补问、真实 SSE 节点流、执行轨迹、工单与引用联动 |
+| AI Command Center | 中英咨询、多轮补问、实际节点进度（本地 SSE，公开版浏览器执行回调）、执行轨迹、工单与引用联动 |
 | Service Agent | 规则意图与字段提取，语言偏好、人工转接、受控业务工具、幂等与失败重试 |
 | Service Quality | 疗效、医学判断、保险、预约、敏感信息及不当表达检查，TXT/JSON 导入最多 20 条、人工复核、报告下载 |
 | Knowledge Hub | TXT/Markdown 上传，本地模式支持文本 PDF；分块、关键词排序、引用、版本、失效及权限 |
