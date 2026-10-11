@@ -8,7 +8,8 @@ An independently built clinic operations demo that connects bilingual service in
 
 - GitHub：[wuchan1870422-byte/up-care-agentops](https://github.com/wuchan1870422-byte/up-care-agentops)
 - Live Demo：[up-care-agentops.vercel.app](https://up-care-agentops.vercel.app)（公开访问，浏览器独立保存虚构数据）
-- 已验证：90 项工程测试、40 项本地 E2E、20 项公网 E2E、77 条业务评测；[交付与验证记录](docs/DELIVERY.md)。
+- 2026-10-11 已验证：95 项工程测试、44 项本地 E2E、77 条规则评测；公网验证与提交记录见 [交付记录](docs/DELIVERY.md)。
+- 面试：首页点击 **开始面试演示**；[面试指南与 15 个技术问答](docs/INTERVIEW_GUIDE.md) · [真实架构与缺陷审计](docs/TECHNICAL_AUDIT.md)。
 - 完整需求：[MASTER_SPEC](docs/MASTER_SPEC.md)；接续开发：[PROJECT_STATE](PROJECT_STATE.md) 与 [TASKS](TASKS.md)。
 
 ![运营工作台](docs/screenshots/overview-desktop.png)

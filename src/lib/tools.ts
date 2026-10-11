@@ -16,7 +16,11 @@ import {
   runResponseQualityCheck,
   textSchema,
 } from "./rules";
-import { searchKnowledge } from "./knowledge";
+import {
+  searchKnowledge,
+  assertConversationReadable,
+  assertRunReadable,
+} from "./knowledge";
 import type { Approval, Context, Run, Ticket } from "./types";
 const intentSchema = z.object({
   intent: z.enum(["appointment", "insurance", "clinic", "medical", "unknown"]),
@@ -136,6 +140,11 @@ export function executeTool(
           z.object({ id: z.string().uuid() }).parse(input).id,
           "ticket",
         );
+        if ((result as { data: Ticket }).data.conversationId)
+          assertConversationReadable(
+            ctx,
+            (result as { data: Ticket }).data.conversationId!,
+          );
         break;
       case "createServiceTicket": {
         authorize(ctx, ["service", "operator", "reviewer", "admin"]);
@@ -192,15 +201,24 @@ export function executeTool(
             key: z.string().min(8).max(200),
           })
           .parse(input);
-        get(ctx, p.targetId, p.targetKind);
-        result = idempotent(ctx, p.key, JSON.stringify(p), () =>
-          create<Approval>(ctx, "approval", {
+        result = idempotent(ctx, p.key, JSON.stringify(p), () => {
+          const target = get<{ status: string }>(ctx, p.targetId, p.targetKind);
+          if (target.data.status !== "pending")
+            throw new AppError("审核目标已不处于待审核状态", 409);
+          const pending = list<Approval>(ctx, "approval").find(
+            (r) =>
+              r.data.targetId === p.targetId &&
+              r.data.targetKind === p.targetKind &&
+              r.data.status === "pending",
+          );
+          if (pending) return pending;
+          return create<Approval>(ctx, "approval", {
             targetId: p.targetId,
             targetKind: p.targetKind,
             reason: p.reason,
             status: "pending",
-          }),
-        );
+          });
+        });
         break;
       }
       case "updateTicketStatus": {
@@ -254,7 +272,7 @@ export function executeTool(
         const p = z
           .object({ runId: z.string().uuid(), summary: z.string().max(2000) })
           .parse(input);
-        get<Run>(ctx, p.runId, "run");
+        assertRunReadable(ctx, get<Run>(ctx, p.runId, "run").data);
         audit(ctx, "trace.saved", p.runId, { summary: p.summary });
         result = { saved: true, runId: p.runId };
         break;
@@ -300,6 +318,11 @@ export function decideApproval(ctx: Context, input: unknown) {
       !["reviewer", "admin"].includes(ctx.role)
     )
       throw new AppError("文书必须由医疗审核员处理", 403);
+    if (target.data.status !== "pending")
+      throw new AppError(
+        "审核目标状态已变化，请刷新后核对，不能覆盖后续状态",
+        409,
+      );
     update(ctx, target.id, { ...target.data, status: p.decision });
     const result = update(ctx, row.id, {
       ...row.data,

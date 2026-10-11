@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { interviewScenario } from "../../src/lib/interview-scenario";
 const nav = (page: Page, name: string) =>
   page
     .locator("nav")
@@ -26,6 +27,84 @@ test("overview explains independent rule-based demo and real zero metrics", asyn
   await expect(page.locator(".concept-banner")).toContainText("非官方概念演示");
   await expect(page.getByText("规则演示模式", { exact: true })).toBeVisible();
   await expect(page.locator(".metric").first()).toContainText("00");
+});
+
+test("interview flow collects missing fields, rejects unauthorized export and completes an approved ticket", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.getByRole("button", { name: "开始面试演示", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("面试演示空间已准备");
+  await expect(page.getByLabel("患者咨询内容")).toHaveValue(
+    interviewScenario.initial,
+  );
+  await page.getByRole("button", { name: "运行 Agent", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("执行记录已保存");
+  await expect(page.locator(".outcome")).toContainText("clinic");
+  await expect(page.locator(".ticket-link")).toHaveCount(0);
+  await page.getByRole("button", { name: "填入补充信息", exact: true }).click();
+  await page.getByRole("button", { name: "运行 Agent", exact: true }).click();
+  await expect(page.locator(".ticket-link")).toBeVisible();
+  await expect(page.locator(".execution-node")).toHaveCount(10);
+  await nav(page, "服务工单");
+  await page.getByRole("button", { name: "导出 CSV", exact: true }).click();
+  await expect(page.locator(".alert.error")).toContainText("无权");
+  await expect(page.locator("[data-ticket-id]")).toHaveCount(1);
+  await role(page, "reviewer");
+  await page.locator("[data-ticket-id]").click();
+  await page.getByRole("button", { name: "通过审核", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("审核通过");
+  await page.getByLabel("关闭工单").click();
+  await role(page, "operator");
+  await page.locator("[data-ticket-id]").click();
+  await page.getByRole("button", { name: "开始处理", exact: true }).click();
+  await expect(page.locator("[role=dialog] .badge").first()).toHaveText(
+    "处理中",
+  );
+  await page.getByRole("button", { name: "完成工单", exact: true }).click();
+  await expect(page.locator("[role=dialog] .badge").first()).toHaveText(
+    "已完成",
+  );
+  await page.getByLabel("关闭工单").click();
+  await nav(page, "运营总览");
+  await expect(page.locator(".metric").nth(1)).toContainText("1 已完成");
+  await page.reload();
+  await expect(page.locator(".metric").nth(1)).toContainText("1 已完成");
+  expect(errors).toEqual([]);
+});
+
+test("knowledge edits preserve restriction and disabled state; role changes clear cached evidence", async ({
+  page,
+}) => {
+  await role(page, "admin");
+  await nav(page, "知识中心");
+  await page.getByLabel("文档标题", { exact: true }).fill("星河限阅测试");
+  await page
+    .getByLabel("正文", { exact: true })
+    .fill("星河限阅测试，虚构访问标记 ONLY_REVIEWER_42。");
+  await page.getByLabel("文档可见性").selectOption("reviewer");
+  await page.getByRole("button", { name: "保存并索引" }).click();
+  await expect(page.getByRole("status")).toContainText("新版本");
+  await page.getByLabel("检索问题").fill("星河限阅测试");
+  await page.getByRole("button", { name: "检索知识", exact: true }).click();
+  await expect(page.locator(".citation-list")).toContainText(
+    "ONLY_REVIEWER_42",
+  );
+  const doc = page.locator(".document").filter({ hasText: "星河限阅测试" });
+  await doc.getByRole("button", { name: "编辑文档", exact: true }).click();
+  await page.getByLabel("允许参与检索").uncheck();
+  await page
+    .getByLabel("正文", { exact: true })
+    .fill("星河限阅测试更新，虚构访问标记 ONLY_REVIEWER_43。");
+  await page.getByRole("button", { name: "保存并索引" }).click();
+  await doc.getByRole("button", { name: "编辑文档", exact: true }).click();
+  await expect(page.getByLabel("文档可见性")).toHaveValue("reviewer");
+  await expect(page.getByLabel("允许参与检索")).not.toBeChecked();
+  await role(page, "service");
+  await expect(page.getByLabel("正文", { exact: true })).toHaveValue("");
+  await expect(page.locator(".citation-list")).toHaveCount(0);
+  await expect(doc).toHaveCount(0);
 });
 test("consultation creates ticket, evidence and actual execution nodes", async ({
   page,

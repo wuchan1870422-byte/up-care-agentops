@@ -1,5 +1,15 @@
 # 公开演示交付记录
 
+## 2026-10-11 技术审计与面试升级
+
+在原项目修复三个已复现问题：文档 metadata 重置、限阅咨询缓存重放/续写、过期审批覆盖目标状态。保留所有原有功能及旧数据，增加首页面试入口和独立虚构空间。
+
+本轮本地已通过：95 项 Vitest、44 项双模式 E2E、77 条规则评测、TypeScript、ESLint、Next 生产构建。生产依赖漏洞 0；开发依赖 5 项高危链未强制降级。新增 INTERVIEW_GUIDE.md 与 TECHNICAL_AUDIT.md，准确说明没有 LLM、向量检索、模型自主 Tool Calling 或正式认证。
+
+本轮发布与线上证据待验证后追加；下面的提交、CI 和部署编号属于历史记录。
+
+## 历史交付
+
 日期：2026-10-09。基于原项目继续开发，完整需求保存在 MASTER_SPEC.md。
 
 - Live Demo：https://up-care-agentops.vercel.app

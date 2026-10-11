@@ -41,6 +41,7 @@ import { PromptLab } from "./prompt-lab";
 import type { promptLabState } from "@/lib/prompt-lab";
 import { QualityBatch } from "./quality-batch";
 import { MockIntegrations } from "./mock-integrations";
+import { interviewScenario } from "@/lib/interview-scenario";
 import type { analytics } from "@/lib/analytics";
 import type {
   Approval,
@@ -274,6 +275,7 @@ export default function Workspace({
     [runId, setRunId] = useState<string>(),
     [nodeId, setNodeId] = useState<string>(),
     [tour, setTour] = useState(false);
+  const [interviewMode, setInterviewMode] = useState(false);
   const [search, setSearch] = useState(""),
     [filter, setFilter] = useState("all"),
     [selectedTicket, setSelectedTicket] = useState<string>(),
@@ -286,6 +288,8 @@ export default function Workspace({
     [docTitle, setDocTitle] = useState(""),
     [docText, setDocText] = useState(""),
     [docSource, setDocSource] = useState(""),
+    [docVisibility, setDocVisibility] = useState<Document["visibility"]>("all"),
+    [docActive, setDocActive] = useState(true),
     [docId, setDocId] = useState<string>(),
     [query, setQuery] = useState("保险报销"),
     [citations, setCitations] = useState<Citation[] | null>(null),
@@ -414,6 +418,26 @@ export default function Workspace({
   }
   const canReview =
     state && ["reviewer", "manager", "admin"].includes(state.role);
+  async function startInterview() {
+    await act(async () => {
+      await api("reset", { confirm: "NEW_WORKSPACE" });
+      setConversationId(undefined);
+      setRunId(undefined);
+      setSelectedTicket(undefined);
+      setNodeId(undefined);
+      setCitations(null);
+      setDocId(undefined);
+      setDocTitle("");
+      setDocText("");
+      setDocSource("");
+      setDocVisibility("all");
+      setDocActive(true);
+      setInput(interviewScenario.initial);
+      setTour(false);
+      setInterviewMode(true);
+      go("command");
+    }, "面试演示空间已准备，旧空间数据保留");
+  }
   const approvalButtons = (a: RecordRow<Approval>) => (
     <div className="actions">
       <button
@@ -553,10 +577,17 @@ export default function Workspace({
               value={state?.role ?? "service"}
               disabled={busy || !state}
               onChange={(e) =>
-                void act(
-                  () => api("role", { role: e.target.value }),
-                  "演示角色已切换",
-                )
+                void act(async () => {
+                  await api("role", { role: e.target.value });
+                  setCitations(null);
+                  setDocId(undefined);
+                  setDocTitle("");
+                  setDocText("");
+                  setDocSource("");
+                  setDocVisibility("all");
+                  setDocActive(true);
+                  setNodeId(undefined);
+                }, "演示角色已切换")
               }
             >
               {Object.entries(roleLabels).map(([id, label]) => (
@@ -633,10 +664,19 @@ export default function Workspace({
                 </div>
                 <div className="actions">
                   {view === "overview" ? (
-                    <button onClick={() => go("command")}>
-                      <Play size={16} />
-                      Launch Interactive Demo
-                    </button>
+                    <>
+                      <button onClick={() => go("command")}>
+                        <Play size={16} />
+                        Launch Interactive Demo
+                      </button>
+                      <button
+                        className="secondary"
+                        disabled={busy}
+                        onClick={() => void startInterview()}
+                      >
+                        开始面试演示
+                      </button>
+                    </>
                   ) : (
                     <button
                       className="secondary"
@@ -649,6 +689,51 @@ export default function Workspace({
                   )}
                 </div>
               </div>
+              {interviewMode && (
+                <section className="panel" aria-label="面试演示步骤">
+                  <div className="form-content">
+                    <strong>5 分钟面试演示 · 独立虚构空间</strong>
+                    <p>
+                      ① 运行首次咨询，展示缺失院区与时间　②
+                      补充信息并运行，查看节点和引用　③
+                      保持客服角色，在服务工单导出 CSV，展示权限错误　④
+                      切换医疗审核员通过审核，再由门诊运营处理并完成　⑤
+                      回到总览并刷新，核对 1 条已完成工单。
+                    </p>
+                    <p className="muted">
+                      新空间保留旧记录；没有真实预约、模型调用或外部通知。
+                    </p>
+                    <div className="actions">
+                      {view === "command" && (
+                        <>
+                          <button
+                            className="secondary"
+                            disabled={busy}
+                            onClick={() => setInput(interviewScenario.initial)}
+                          >
+                            填入首次咨询
+                          </button>
+                          <button
+                            className="secondary"
+                            disabled={busy}
+                            onClick={() =>
+                              setInput(interviewScenario.supplement)
+                            }
+                          >
+                            填入补充信息
+                          </button>
+                        </>
+                      )}
+                      <button
+                        className="text-button"
+                        onClick={() => setInterviewMode(false)}
+                      >
+                        收起面试步骤
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )}
               {view === "overview" && (
                 <>
                   <div className="metric-grid">
@@ -1710,6 +1795,32 @@ export default function Workspace({
                             onChange={(e) => setDocSource(e.target.value)}
                           />
                         </label>
+                        <label>
+                          文档可见性
+                          <select
+                            aria-label="文档可见性"
+                            value={docVisibility}
+                            onChange={(e) =>
+                              setDocVisibility(
+                                e.target.value as Document["visibility"],
+                              )
+                            }
+                          >
+                            <option value="all">全部演示角色</option>
+                            <option value="reviewer">
+                              仅医疗审核员与管理员
+                            </option>
+                          </select>
+                        </label>
+                        <label>
+                          <input
+                            aria-label="允许参与检索"
+                            type="checkbox"
+                            checked={docActive}
+                            onChange={(e) => setDocActive(e.target.checked)}
+                          />
+                          允许参与检索
+                        </label>
                         <div className="actions">
                           <button
                             disabled={busy}
@@ -1720,11 +1831,15 @@ export default function Workspace({
                                   title: docTitle,
                                   content: docText,
                                   source: docSource,
+                                  visibility: docVisibility,
+                                  active: docActive,
                                 });
                                 setDocId(undefined);
                                 setDocTitle("");
                                 setDocText("");
                                 setDocSource("");
+                                setDocVisibility("all");
+                                setDocActive(true);
                               }, "文档已分块并保存新版本")
                             }
                           >
@@ -1774,6 +1889,8 @@ export default function Workspace({
                                 setDocTitle(d.data.title);
                                 setDocText(d.data.content);
                                 setDocSource(d.data.source);
+                                setDocVisibility(d.data.visibility);
+                                setDocActive(d.data.active);
                               }}
                             >
                               编辑文档

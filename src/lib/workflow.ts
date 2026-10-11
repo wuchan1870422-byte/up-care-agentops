@@ -12,6 +12,7 @@ import {
 } from "./repository";
 import { executeTool, type ToolName } from "./tools";
 import { draftResponse, runResponseQualityCheck, textSchema } from "./rules";
+import { assertConversationReadable, assertRunReadable } from "./knowledge";
 import type {
   Citation,
   Context,
@@ -37,9 +38,10 @@ export async function runConsultation(
 ) {
   authorize(ctx, ["service", "operator", "admin"]);
   const p = runSchema.parse(input);
-  if (p.conversationId) get(ctx, p.conversationId, "conversation");
+  if (p.conversationId) assertConversationReadable(ctx, p.conversationId);
   if (p.retryOf) {
     const old = get<Run>(ctx, p.retryOf, "run");
+    assertRunReadable(ctx, old.data);
     if (old.data.status !== "failed")
       throw new AppError("仅可重试失败执行", 409);
     if (
@@ -76,6 +78,8 @@ export async function runConsultation(
     return { runId: run.id, conversationId: conv.id };
   });
   const row = get<Run>(ctx, reservation.runId, "run");
+  assertRunReadable(ctx, row.data);
+  assertConversationReadable(ctx, row.data.conversationId);
   if (row.data.nodes.length || row.data.status !== "running") return row;
   const run = row.data,
     started = performance.now();

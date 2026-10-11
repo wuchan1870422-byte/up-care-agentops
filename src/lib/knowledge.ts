@@ -1,6 +1,14 @@
 import { z } from "zod";
-import { authorize, create, get, list, update, audit } from "./repository";
-import type { Citation, Context, Document } from "./types";
+import {
+  AppError,
+  authorize,
+  create,
+  get,
+  list,
+  update,
+  audit,
+} from "./repository";
+import type { Citation, Context, Document, Run } from "./types";
 export const documentSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().trim().min(2).max(180),
@@ -9,9 +17,9 @@ export const documentSchema = z.object({
     .string()
     .max(600)
     .refine((v) => !v || /^https?:\/\//i.test(v), "来源必须是 HTTP(S) 地址")
-    .default(""),
-  visibility: z.enum(["all", "reviewer"]).default("all"),
-  active: z.boolean().default(true),
+    .optional(),
+  visibility: z.enum(["all", "reviewer"]).optional(),
+  active: z.boolean().optional(),
 });
 export function chunk(content: string): string[] {
   const out: string[] = [];
@@ -26,9 +34,9 @@ export function saveDocument(ctx: Context, input: unknown) {
   const data: Document = {
     title: p.title,
     content: p.content,
-    source: p.source,
-    visibility: p.visibility,
-    active: p.active,
+    source: p.source ?? old?.data.source ?? "",
+    visibility: p.visibility ?? old?.data.visibility ?? "all",
+    active: p.active ?? old?.data.active ?? true,
     version: (old?.data.version ?? 0) + 1,
     versions: old
       ? [
@@ -56,6 +64,18 @@ export function accessibleDocuments(ctx: Context) {
     (r) =>
       r.data.visibility === "all" || ["reviewer", "admin"].includes(ctx.role),
   );
+}
+export function assertRunReadable(ctx: Context, run: Run) {
+  const allowed = new Set(accessibleDocuments(ctx).map((d) => d.id));
+  if (run.citations.some((c) => !allowed.has(c.documentId)))
+    throw new AppError("当前角色无权读取此运行引用的限阅资料", 403);
+}
+export function assertConversationReadable(ctx: Context, id: string) {
+  get(ctx, id, "conversation");
+  for (const run of list<Run>(ctx, "run").filter(
+    (r) => r.data.conversationId === id,
+  ))
+    assertRunReadable(ctx, run.data);
 }
 export function tokenize(text: string): string[] {
   const s = text.toLowerCase();
