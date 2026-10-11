@@ -6,7 +6,16 @@
 
 本轮本地已通过：95 项 Vitest、44 项双模式 E2E、77 条规则评测、TypeScript、ESLint、Next 生产构建。生产依赖漏洞 0；开发依赖 5 项高危链未强制降级。新增 INTERVIEW_GUIDE.md 与 TECHNICAL_AUDIT.md，准确说明没有 LLM、向量检索、模型自主 Tool Calling 或正式认证。
 
-本轮发布与线上证据待验证后追加；下面的提交、CI 和部署编号属于历史记录。
+本轮发布与验证证据：
+
+- [应用提交 b1da4e7](https://github.com/wuchan1870422-byte/up-care-agentops/commit/b1da4e7badde22c8002d84df7ac206949fe9e38a)，已推送 master。
+- [GitHub Actions 38126855561](https://github.com/wuchan1870422-byte/up-care-agentops/actions/runs/38126855561) 成功：Ubuntu Chromium 工程检查及双模式 E2E。
+- Vercel 生产部署 `dpl_EgdDyuufCvrNweuVyzPQo5SoB3jv` Ready；GitHub Vercel commit status 成功，别名为 [公开 Demo](https://up-care-agentops.vercel.app/)。
+- 匿名首页 200；`/api/health` 200，`status=ok, storage=browser, modelCalled=false`；`/api/state` 按设计返回 503，避免误认为公共共享数据库已经配置。
+- 公网完整 E2E **22/22 通过，84.8 秒**，无跳过或自动重试。首次出现两个网络初始化超时，资源响应均为 200；按轨迹调整远程测试就绪等待后复验，未修改业务断言。详情见 TEST_REPORT.md。
+- 新面试入口桌面/390px 手机无 pageerror 或整页横向溢出；截图见 screenshots/interview-desktop.png 与 interview-mobile.png。
+
+收尾提交只更新测试远程等待预算和验证文档，应用代码与上述已测版本一致。下方提交、CI 和部署编号属于历史记录。
 
 ## 历史交付
 

@@ -10,7 +10,9 @@
 - 新增首页面试演示入口、虚构数据、补问/权限错误/审批/完成/刷新步骤；44 项本地双模式 E2E 全部通过。
 - TypeScript、ESLint、生产 Build、77 条规则评测通过。生产依赖漏洞 0；开发依赖链 5 项高危记录保留，未强制降级。
 - 文档：docs/INTERVIEW_GUIDE.md、docs/TECHNICAL_AUDIT.md。公开版没有 LLM/向量 RAG/模型 Tool Calling，不能宣称医疗生产系统。
-- 本轮推送及线上验证待执行，下面的旧交付记录属于历史基线；最新证据将追加到 DELIVERY.md。
+- 应用提交 b1da4e7badde22c8002d84df7ac206949fe9e38a 已推送；CI 38126855561 成功，部署 dpl_EgdDyuufCvrNweuVyzPQo5SoB3jv Ready。
+- 公网 22/22 E2E 通过（84.8 秒、无跳过/自动重试）；匿名首页和健康接口 200，modelCalled=false。首次两个网络初始化超时及远程等待配置调整已记录。
+- 以下旧交付记录属于历史基线；本轮证据见 DELIVERY.md。后续收尾提交仅修改测试等待预算和文档，不改应用代码。
 
 ## 当前阶段
 公开规则演示交付完成，新增批量报告、模拟集成与 Prompt 模板实验已上线并通过最终回归。完整原始需求保存在 docs/MASTER_SPEC.md，没有重新创建工程；不把规则演示等同于完整医疗生产系统。

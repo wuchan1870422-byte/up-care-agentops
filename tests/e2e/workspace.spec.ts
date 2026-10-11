@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }, info) => {
   await page.goto(info.project.name === "browser-indexeddb" ? "/demo" : "/");
   await expect(
     page.getByRole("heading", { name: "每一次服务，都有迹可循。" }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: process.env.E2E_BASE_URL ? 30000 : 10000 });
 });
 test("overview explains independent rule-based demo and real zero metrics", async ({
   page,
